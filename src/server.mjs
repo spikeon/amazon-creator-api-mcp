@@ -59,6 +59,79 @@ function withPartnerTag(body) {
   return { partnerTag: cfg.associateTag, ...body };
 }
 
+const DEFAULT_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+const URL_FETCH_TIMEOUT_MS = 15000;
+
+function normalizeHttpUrl(input) {
+  const s = String(input).trim();
+  const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
+  const u = new URL(withProto);
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+    throw new Error('Only http(s) URLs are supported');
+  }
+  return u.href;
+}
+
+/**
+ * Extract Amazon ASIN from a fully resolved product URL.
+ * @param {string} urlString
+ * @returns {string | null}
+ */
+function extractAsinFromUrl(urlString) {
+  try {
+    const u = new URL(urlString);
+    const q = u.searchParams.get('asin');
+    if (q && /^[A-Z0-9]{10}$/i.test(q)) {
+      return q.toUpperCase();
+    }
+    const path = u.pathname;
+    const patterns = [
+      /\/dp\/([A-Z0-9]{10})(?:\/|$|[?#])/i,
+      /\/gp\/product\/([A-Z0-9]{10})(?:\/|$|[?#])/i,
+      /\/gp\/aw\/d\/([A-Z0-9]{10})(?:\/|$|[?#])/i,
+      /\/exec\/obidos\/asin\/([A-Z0-9]{10})(?:\/|$|[?#])/i,
+      /\/o\/asin\/([A-Z0-9]{10})(?:\/|$|[?#])/i,
+      /\/(?:[a-z-]+)\/dp\/([A-Z0-9]{10})(?:\/|$|[?#])/i,
+    ];
+    for (const re of patterns) {
+      const m = path.match(re);
+      if (m) return m[1].toUpperCase();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Follow redirects to the final landing URL (amzn.to, a.co, /dp/, etc.).
+ * @param {string} startUrl
+ * @returns {Promise<string>}
+ */
+async function resolveToFinalUrl(startUrl) {
+  const ac = new AbortController();
+  const tid = setTimeout(() => ac.abort(), URL_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(startUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: ac.signal,
+      headers: { 'User-Agent': DEFAULT_UA, Accept: 'text/html,*/*' },
+    });
+    const finalUrl = res.url;
+    try {
+      await res.body?.cancel?.();
+    } catch (_) {
+      /* ignore */
+    }
+    return finalUrl;
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
 function jsonResult(data) {
   return {
     content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
@@ -299,6 +372,45 @@ async function main() {
         const req = GetReportRequestContent.constructFromObject({ filename });
         const data = await api.getReport(cfg.marketplace, req);
         return jsonResult(data);
+      } catch (e) {
+        return errResult(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    'amazon_creators_short_url_to_id',
+    {
+      description:
+        'Resolve an Amazon short link (amzn.to, a.co) or product URL: follow redirects, then return the ASIN. Skips network if the URL already contains an ASIN. Does not use Creators API credentials.',
+      inputSchema: {
+        url: z
+          .string()
+          .min(1)
+          .describe(
+            'Short URL or Amazon product link; https:// optional.',
+          ),
+      },
+    },
+    async ({ url: urlInput }) => {
+      try {
+        const normalized = normalizeHttpUrl(urlInput);
+        let directAsin = extractAsinFromUrl(normalized);
+        let finalUrl = normalized;
+        if (!directAsin) {
+          finalUrl = await resolveToFinalUrl(normalized);
+          directAsin = extractAsinFromUrl(finalUrl);
+        }
+        const out = {
+          asin: directAsin,
+          finalUrl,
+          inputNormalized: normalized,
+        };
+        if (directAsin == null) {
+          out.note =
+            'No ASIN in final URL path or ?asin=. The page may need a browser, block bots, or use an unsupported format.';
+        }
+        return jsonResult(out);
       } catch (e) {
         return errResult(e);
       }
