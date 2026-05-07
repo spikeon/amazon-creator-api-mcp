@@ -87,8 +87,8 @@ Catalog tools take a **`payload`** object: fields match Creators API request bod
 | `amazon_creators_get_feed` | Feed by `feedName`. |
 | `amazon_creators_list_reports` | List report files. |
 | `amazon_creators_get_report` | Report by `filename`. |
-| `getPriceById` | One ASIN: price + title summary and full response. |
-| `getQtyById` | One ASIN: availability summary (max/min order quantity, type)—not true stock on hand. |
+| `amazon_creators_get_price_by_id` | One ASIN: price + title summary and full response. |
+| `amazon_creators_get_qty_by_id` | One ASIN: availability summary (max/min order quantity, type)—not true stock on hand. |
 
 ## API coverage
 

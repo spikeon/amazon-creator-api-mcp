@@ -306,7 +306,7 @@ async function main() {
   );
 
   server.registerTool(
-    'getPriceById',
+    'amazon_creators_get_price_by_id',
     {
       description:
         'Shortcut: GetItems for one ASIN with offersV2.listings.price (+ title). Returns a small summary plus raw item.',
@@ -344,7 +344,7 @@ async function main() {
   );
 
   server.registerTool(
-    'getQtyById',
+    'amazon_creators_get_qty_by_id',
     {
       description:
         'Shortcut: GetItems for one ASIN with offersV2.listings.availability (+ title). Summarizes max/min order quantity and availability type (Amazon does not expose stock counts).',
