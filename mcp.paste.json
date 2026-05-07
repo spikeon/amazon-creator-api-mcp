@@ -16,7 +16,7 @@
         "AMAZON_MARKETPLACE",
         "-e",
         "AMAZON_CREATORS_CREDENTIAL_VERSION",
-        "amazon-creator-api-mcp:latest"
+        "ghcr.io/spikeon/amazon-creator-api-mcp:mcp"
       ],
       "env": {
         "AMAZON_ASSOCIATE_TAG": "your-partner-tag-20",

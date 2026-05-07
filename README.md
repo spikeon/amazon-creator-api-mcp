@@ -8,21 +8,24 @@ A [Model Context Protocol](https://modelcontextprotocol.io) (stdio) server that 
 - Docker Desktop (or compatible engine) if you run the MCP through the provided image
 - Valid Creators API credentials from Associates Central
 
-## Quick start (Docker)
+## Quick start (Docker, pull from GHCR)
 
-1. Clone or copy this repository and open a shell at the repo root.
+The published image is **`ghcr.io/spikeon/amazon-creator-api-mcp:mcp`** (also tagged `:latest`). Merging **`mcp.paste.json`** into Cursor’s `mcp.json` uses this image, same idea as other MCP servers that run `docker run … ghcr.io/…` with no local build.
 
-2. Build the image:
+1. Ensure Docker is running. On first use, Docker pulls the image automatically.
+2. Add the server to your MCP config from **`mcp.paste.json`** (merge under `"mcpServers"`).
+3. Replace the placeholder `env` values with your real secrets and marketplace host.
+4. Restart Cursor (or your MCP host) so it reloads the config.
 
-   ```bash
-   npm run docker:build
-   ```
+**Publishing / updates:** Pushes to `main` run [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml) and push the image to GHCR. After the first run, open the repo on GitHub → **Packages** → **amazon-creator-api-mcp** → **Package settings** and set visibility to **public** if you want anonymous `docker pull` (recommended for a personal MCP image).
 
-3. Add the server to your MCP config. You can start from `mcp.paste.json` and merge `mcpServers` into your existing `mcp.json`.
+**Local build (optional, for development):**
 
-4. Replace the placeholder `env` values in `mcp.json` with your real secrets and marketplace host.
+```bash
+npm run docker:build
+```
 
-5. Restart the MCP host / Cursor so it picks up the new server.
+Then change the image in `mcp.json` from `ghcr.io/spikeon/…` to `amazon-creator-api-mcp:latest`.
 
 ## Quick start (local Node)
 
@@ -73,7 +76,7 @@ See **`mcp.paste.json`** for a full Docker-based `amazon-creator-api` entry. Mer
 | Command | Purpose |
 |---------|---------|
 | `npm start` | Run the MCP server on stdio (requires env vars). |
-| `npm run docker:build` | Build `amazon-creator-api-mcp:latest`. |
+| `npm run docker:build` | Build `amazon-creator-api-mcp:latest` locally (CI publishes to `ghcr.io/spikeon/amazon-creator-api-mcp`). |
 
 ## API coverage note
 

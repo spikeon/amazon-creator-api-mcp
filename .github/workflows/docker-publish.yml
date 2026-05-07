@@ -1,0 +1,43 @@
+# Build and push the MCP image to GitHub Container Registry (GHCR).
+# Published tags: ghcr.io/<owner>/amazon-creator-api-mcp:mcp and :latest
+#
+# After the first successful run, set the package visibility to **public**
+# (repo → Packages → amazon-creator-api-mcp → Package settings) so `docker pull`
+# works without logging in, matching typical MCP usage.
+
+name: Publish Docker image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:mcp
