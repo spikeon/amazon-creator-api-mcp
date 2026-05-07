@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "amazon-creator-api": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "AMAZON_ASSOCIATE_TAG",
+        "-e",
+        "AMAZON_CREATORS_CLIENT_ID",
+        "-e",
+        "AMAZON_CREATORS_CLIENT_SECRET",
+        "-e",
+        "AMAZON_MARKETPLACE",
+        "-e",
+        "AMAZON_CREATORS_CREDENTIAL_VERSION",
+        "amazon-creator-api-mcp:latest"
+      ],
+      "env": {
+        "AMAZON_ASSOCIATE_TAG": "your-partner-tag-20",
+        "AMAZON_CREATORS_CLIENT_ID": "your-client-id",
+        "AMAZON_CREATORS_CLIENT_SECRET": "your-client-secret",
+        "AMAZON_MARKETPLACE": "www.amazon.com",
+        "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.1"
+      }
+    }
+  }
+}

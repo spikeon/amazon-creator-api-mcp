@@ -1,0 +1,19 @@
+{
+  "name": "amazon-creator-api-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server.mjs",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "docker:build": "docker build -t amazon-creator-api-mcp:latest ."
+  },
+  "keywords": ["mcp", "amazon", "creators-api", "affiliate"],
+  "author": "",
+  "license": "ISC",
+  "description": "MCP server for Amazon Creators API (Docker + stdio)",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "amazon-creator-api-sdk": "^1.2.0",
+    "zod": "^4.4.3"
+  }
+}
