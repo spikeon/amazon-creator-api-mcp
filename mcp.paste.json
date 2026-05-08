@@ -16,6 +16,8 @@
         "AMAZON_MARKETPLACE",
         "-e",
         "AMAZON_CREATORS_CREDENTIAL_VERSION",
+        "-e",
+        "AMAZON_CREATORS_THROTTLE_MS",
         "ghcr.io/spikeon/amazon-creator-api-mcp:mcp"
       ],
       "env": {
@@ -23,7 +25,8 @@
         "AMAZON_CREATORS_CLIENT_ID": "your-client-id",
         "AMAZON_CREATORS_CLIENT_SECRET": "your-client-secret",
         "AMAZON_MARKETPLACE": "www.amazon.com",
-        "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.1"
+        "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.1",
+        "AMAZON_CREATORS_THROTTLE_MS": "1100"
       }
     }
   }

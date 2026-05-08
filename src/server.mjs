@@ -54,6 +54,43 @@ function getApi() {
   return _api;
 }
 
+const DEFAULT_CREATORS_THROTTLE_MS = 1100;
+
+function creatorsThrottleMs() {
+  const raw = process.env.AMAZON_CREATORS_THROTTLE_MS;
+  if (raw === '' || raw === undefined) return DEFAULT_CREATORS_THROTTLE_MS;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_CREATORS_THROTTLE_MS;
+}
+
+/** Serialize Creators API traffic + enforce minimum gap between calls (429 / TPS safety). */
+let _creatorsGate = Promise.resolve();
+let _lastCreatorsCallEnd = 0;
+
+/**
+ * @template T
+ * @param {() => Promise<T>} fn
+ * @returns {Promise<T>}
+ */
+function runCreatorsApi(fn) {
+  const run = _creatorsGate.then(async () => {
+    const gap = creatorsThrottleMs();
+    if (gap > 0 && _lastCreatorsCallEnd > 0) {
+      const elapsed = Date.now() - _lastCreatorsCallEnd;
+      if (elapsed < gap) {
+        await new Promise((r) => setTimeout(r, gap - elapsed));
+      }
+    }
+    try {
+      return await fn();
+    } finally {
+      _lastCreatorsCallEnd = Date.now();
+    }
+  });
+  _creatorsGate = run.catch(() => {});
+  return run;
+}
+
 function withPartnerTag(body) {
   const cfg = getConfig();
   return { partnerTag: cfg.associateTag, ...body };
@@ -227,7 +264,9 @@ async function main() {
         const { api, cfg } = getApi();
         const body = withPartnerTag(payload);
         const req = GetItemsRequestContent.constructFromObject(body);
-        const data = await api.getItems(cfg.marketplace, req);
+        const data = await runCreatorsApi(() =>
+          api.getItems(cfg.marketplace, req),
+        );
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -247,9 +286,11 @@ async function main() {
         const { api, cfg } = getApi();
         const body = withPartnerTag(payload);
         const req = SearchItemsRequestContent.constructFromObject(body);
-        const data = await api.searchItems(cfg.marketplace, {
-          searchItemsRequestContent: req,
-        });
+        const data = await runCreatorsApi(() =>
+          api.searchItems(cfg.marketplace, {
+            searchItemsRequestContent: req,
+          }),
+        );
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -269,7 +310,9 @@ async function main() {
         const { api, cfg } = getApi();
         const body = withPartnerTag(payload);
         const req = GetBrowseNodesRequestContent.constructFromObject(body);
-        const data = await api.getBrowseNodes(cfg.marketplace, req);
+        const data = await runCreatorsApi(() =>
+          api.getBrowseNodes(cfg.marketplace, req),
+        );
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -289,7 +332,9 @@ async function main() {
         const { api, cfg } = getApi();
         const body = withPartnerTag(payload);
         const req = GetVariationsRequestContent.constructFromObject(body);
-        const data = await api.getVariations(cfg.marketplace, req);
+        const data = await runCreatorsApi(() =>
+          api.getVariations(cfg.marketplace, req),
+        );
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -307,7 +352,7 @@ async function main() {
     async () => {
       try {
         const { api, cfg } = getApi();
-        const data = await api.listFeeds(cfg.marketplace);
+        const data = await runCreatorsApi(() => api.listFeeds(cfg.marketplace));
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -328,7 +373,9 @@ async function main() {
       try {
         const { api, cfg } = getApi();
         const req = GetFeedRequestContent.constructFromObject({ feedName });
-        const data = await api.getFeed(cfg.marketplace, req);
+        const data = await runCreatorsApi(() =>
+          api.getFeed(cfg.marketplace, req),
+        );
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -346,7 +393,9 @@ async function main() {
     async () => {
       try {
         const { api, cfg } = getApi();
-        const data = await api.listReports(cfg.marketplace);
+        const data = await runCreatorsApi(() =>
+          api.listReports(cfg.marketplace),
+        );
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -370,7 +419,9 @@ async function main() {
       try {
         const { api, cfg } = getApi();
         const req = GetReportRequestContent.constructFromObject({ filename });
-        const data = await api.getReport(cfg.marketplace, req);
+        const data = await runCreatorsApi(() =>
+          api.getReport(cfg.marketplace, req),
+        );
         return jsonResult(data);
       } catch (e) {
         return errResult(e);
@@ -439,7 +490,9 @@ async function main() {
           ],
         });
         const req = GetItemsRequestContent.constructFromObject(body);
-        const data = await api.getItems(cfg.marketplace, req);
+        const data = await runCreatorsApi(() =>
+          api.getItems(cfg.marketplace, req),
+        );
         const item = data?.itemsResult?.items?.[0];
         const summary = item
           ? {
@@ -476,7 +529,9 @@ async function main() {
           ],
         });
         const req = GetItemsRequestContent.constructFromObject(body);
-        const data = await api.getItems(cfg.marketplace, req);
+        const data = await runCreatorsApi(() =>
+          api.getItems(cfg.marketplace, req),
+        );
         const item = data?.itemsResult?.items?.[0];
         const summary = item
           ? {

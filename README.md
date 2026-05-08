@@ -33,6 +33,8 @@ Equivalent shape:
         "AMAZON_MARKETPLACE",
         "-e",
         "AMAZON_CREATORS_CREDENTIAL_VERSION",
+        "-e",
+        "AMAZON_CREATORS_THROTTLE_MS",
         "ghcr.io/spikeon/amazon-creator-api-mcp:mcp"
       ],
       "env": {
@@ -40,7 +42,8 @@ Equivalent shape:
         "AMAZON_CREATORS_CLIENT_ID": "your-client-id",
         "AMAZON_CREATORS_CLIENT_SECRET": "your-client-secret",
         "AMAZON_MARKETPLACE": "www.amazon.com",
-        "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.1"
+        "AMAZON_CREATORS_CREDENTIAL_VERSION": "3.1",
+        "AMAZON_CREATORS_THROTTLE_MS": "1100"
       }
     }
   }
@@ -70,8 +73,11 @@ Pushes to `main` build and publish via [`.github/workflows/docker-publish.yml`](
 | `AMAZON_CREATORS_CLIENT_SECRET` | Yes | SDK `credentialSecret`. |
 | `AMAZON_MARKETPLACE` | Yes | `x-marketplace` host, e.g. `www.amazon.com`. |
 | `AMAZON_CREATORS_CREDENTIAL_VERSION` | No | Version from Associates Central. Default: `3.1`. |
+| `AMAZON_CREATORS_THROTTLE_MS` | No | Minimum milliseconds **between completed Creators SDK calls** (serial queue). Default `1100` (~under 1 TPS). Set `0` to disable spacing (still serialized). |
 
 Do not commit real credentials.
+
+**Rate limiting:** All Creators SDK calls (`getItems`, `searchItems`, feeds, reports, …) run through one **FIFO queue** with a minimum **idle gap** between calls (`AMAZON_CREATORS_THROTTLE_MS`, default **1100** ms). OAuth handled inside the SDK is **not** separately throttled here; if Amazon counts token refresh toward your quota, occasional bursts may still occur.
 
 ## Tools
 
